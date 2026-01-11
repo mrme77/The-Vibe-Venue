@@ -26,11 +26,14 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 - [ ] Add placeholder keys for:
   ```
   OPENROUTER_API_KEY=your_key_here
-  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here
-  GOOGLE_PLACES_API_KEY=your_key_here
+  YELP_API_KEY=your_key_here
   ```
 - [ ] Add `.env.local` to `.gitignore` (verify it's already there)
-- [ ] Document in README.md where to obtain each API key
+- [ ] Document where to obtain each API key:
+  - OpenRouter: https://openrouter.ai/keys (use free Gemini model)
+  - Yelp Fusion API: https://www.yelp.com/developers/v3/manage_app (500 requests/day free)
+  - Nominatim: No API key required (free OSM geocoding)
+  - Overpass API: No API key required (free OSM venue data)
 
 ### 1.3 Directory Structure
 - [ ] Create `/types` directory in root
@@ -41,7 +44,7 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 
 ### 1.4 Dependencies Installation
 - [ ] Install jsPDF: `npm install jspdf`
-- [ ] Install Google Maps loader: `npm install @googlemaps/js-api-loader`
+- [ ] Install Leaflet for maps: `npm install leaflet` and `npm install -D @types/leaflet`
 - [ ] Install axios for API calls: `npm install axios`
 - [ ] Verify all dependencies installed: `npm list --depth=0`
 - [ ] Run `npm run build` to test build works
@@ -117,53 +120,67 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 ---
 
 ## Phase 3: Backend Utilities & API Clients
-**Goal**: Set up API clients for OpenRouter and Google Places
+**Goal**: Set up API clients for OpenRouter, Nominatim (OSM), Overpass API, and Yelp
 **Skill**: `backend-architect` for API design, `prompt-engineer` for AI prompts
 
 ### 3.1 OpenRouter Client Setup
 - [ ] Create `/lib/openrouter.ts` file
 - [ ] Create `callOpenRouter` async function:
   - Parameters: prompt (string), model (string, default 'google/gemini-2.0-flash-exp')
-  - Use fetch to call OpenRouter API
+  - Use fetch to call OpenRouter API (https://openrouter.ai/api/v1/chat/completions)
   - Add proper error handling with try/catch
   - Return parsed JSON response
 - [ ] Add TypeScript types for OpenRouter request/response
 - [ ] Test function with a simple prompt (console.log test)
 - [ ] Add JSDoc documentation
 
-### 3.2 Google Places Client - Geocoding
-- [ ] Create `/lib/google-places.ts` file
+### 3.2 Nominatim Client - Geocoding (Free OSM)
+- [ ] Create `/lib/nominatim.ts` file
 - [ ] Create `geocodeLocation` async function:
   - Parameter: locationString (string)
-  - Call Google Geocoding API
+  - Call Nominatim API: https://nominatim.openstreetmap.org/search
+  - Add User-Agent header (required by Nominatim)
   - Return { lat: number, lng: number } or throw error
   - Add error handling for invalid locations
+  - Implement 1 request/second rate limiting (Nominatim requirement)
 - [ ] Add TypeScript return type
+- [ ] Add JSDoc documentation with usage policy notes
+
+### 3.3 Overpass API Client - Venue Search (Free OSM)
+- [ ] Create `/lib/overpass.ts` file
+- [ ] Create `searchVenues` async function:
+  - Parameters: query (string), location ({ lat, lng }), radius (number in meters)
+  - Build Overpass QL query for amenities (restaurants, bars, cafes, etc.)
+  - Call Overpass API: https://overpass-api.de/api/interpreter
+  - Parse OSM data and extract venue information
+  - Return array of basic venue data (name, location, tags)
+- [ ] Create helper to map OSM amenity types to our search terms
+- [ ] Add rate limiting (avoid overwhelming free API)
 - [ ] Add JSDoc documentation
 
-### 3.3 Google Places Client - Venue Search
-- [ ] In `/lib/google-places.ts`, create `searchVenues` async function:
-  - Parameters: query (string), location ({ lat, lng }), radius (number)
-  - Call Google Places Text Search API
-  - Return array of basic venue data
-  - Handle rate limiting and errors
-- [ ] Map API response to our `Venue` type
-- [ ] Add JSDoc documentation
-
-### 3.4 Google Places Client - Place Details
-- [ ] In `/lib/google-places.ts`, create `getPlaceDetails` async function:
-  - Parameter: placeId (string)
-  - Call Google Places Details API
-  - Fetch reviews, photos, hours, price level
-  - Return enriched `Venue` object
-- [ ] Add error handling for missing place IDs
+### 3.4 Yelp Fusion API Client - Reviews & Ratings
+- [ ] Create `/lib/yelp.ts` file
+- [ ] Create `enrichVenuesWithYelp` async function:
+  - Parameter: venues (from Overpass), location ({ lat, lng })
+  - Call Yelp Business Search API: https://api.yelp.com/v3/businesses/search
+  - Match OSM venues with Yelp data by name and location
+  - Fetch reviews, ratings, price level, photos
+  - Return enriched venues with Yelp data
+- [ ] Create `getYelpDetails` async function for individual business:
+  - Parameter: yelpBusinessId (string)
+  - Call Yelp Business Details API
+  - Return full venue details including reviews
+- [ ] Add error handling for 500/day rate limit
+- [ ] Map Yelp data to our `Venue` type
 - [ ] Add JSDoc documentation
 
 ### 3.5 Helper Functions
 - [ ] Create `/lib/utils.ts` for shared utilities
-- [ ] Add `formatAddress` function (clean up Google address strings)
+- [ ] Add `formatAddress` function (clean up address strings)
 - [ ] Add `getPriceLabel` function (convert 1-4 to $ symbols)
 - [ ] Add `calculateDistance` function (haversine formula for lat/lng)
+- [ ] Add `rateLimiter` utility (for API throttling)
+- [ ] Add `matchVenuesByLocation` (fuzzy matching for OSM + Yelp data)
 - [ ] Export all utilities
 
 ---
@@ -176,11 +193,12 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 - [ ] Create `/pages/api/geocode.ts` file
 - [ ] Set up POST request handler with TypeScript (NextApiRequest, NextApiResponse)
 - [ ] Validate request body has `location` field
-- [ ] Call `geocodeLocation` from lib/google-places.ts
+- [ ] Call `geocodeLocation` from lib/nominatim.ts
 - [ ] Return { lat, lng } as JSON
 - [ ] Add error responses:
   - 400 for missing location
   - 404 for location not found
+  - 429 for rate limiting
   - 500 for server errors
 - [ ] Add CORS headers if needed
 - [ ] Test with Postman or curl
@@ -200,12 +218,13 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 
 ### 4.3 Search Venues API Route - Part 2: Venue Fetching
 - [ ] Loop through AI-generated search queries
-- [ ] Call `searchVenues` for each query
-- [ ] Combine and deduplicate results by placeId
-- [ ] For each venue, call `getPlaceDetails` to enrich data
-- [ ] Limit to top 10-15 venues to control API costs
+- [ ] Call Overpass API `searchVenues` for each query
+- [ ] Combine and deduplicate results by OSM ID or name+location
+- [ ] Enrich OSM venues with Yelp data using `enrichVenuesWithYelp`
+- [ ] Filter venues that have good Yelp ratings (optional quality filter)
+- [ ] Limit to top 10-15 venues to control API usage
 - [ ] Return { venues, searchQueries } as JSON
-- [ ] Add error handling and logging
+- [ ] Add error handling for rate limits (Yelp 500/day limit)
 - [ ] Test endpoint with sample request
 
 ### 4.4 Recommendations API Route - Part 1: AI Prompt Design
@@ -310,29 +329,34 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 - [ ] Format price level ($ to $$$$)
 - [ ] Truncate long review text with "Read more"
 
-### 5.7 Map View Component - Setup
-**Skill**: `frontend-developer` for Google Maps integration
+### 5.7 Map View Component - Setup (Leaflet.js)
+**Skill**: `frontend-developer` for Leaflet integration
 - [ ] Create `/components/MapView.tsx` file
 - [ ] Define props interface: venues (Venue[]), center ({ lat, lng })
-- [ ] Install and import @googlemaps/js-api-loader
-- [ ] Set up useEffect to load Google Maps script
-- [ ] Create div ref for map container
-- [ ] Add Tailwind CSS for map container sizing
+- [ ] Import Leaflet CSS in component or _app.tsx: `import 'leaflet/dist/leaflet.css'`
+- [ ] Import leaflet library
+- [ ] Set up useEffect to initialize Leaflet map (client-side only)
+- [ ] Create div ref for map container with ID
+- [ ] Add Tailwind CSS for map container sizing (min-height: 400px)
 
-### 5.8 Map View Component - Implementation
-- [ ] Initialize Google Map with center and zoom
-- [ ] Add markers for each venue location
-- [ ] Add info windows showing venue name on marker click
-- [ ] Add custom marker icons (optional, different color for top pick)
+### 5.8 Map View Component - Implementation (Leaflet.js)
+- [ ] Initialize Leaflet map with center and zoom
+- [ ] Add OpenStreetMap tile layer (free): `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`
+- [ ] Add markers for each venue using L.marker()
+- [ ] Add popups showing venue name, rating on marker click
+- [ ] Fix default marker icon issue (Leaflet + Next.js)
+- [ ] Add custom marker colors for top picks (optional)
 - [ ] Handle map loading errors gracefully
 - [ ] Make map responsive (height adjusts on mobile)
+- [ ] Clean up map instance on unmount
 
-### 5.9 Map View Component - Polish
-- [ ] Fit map bounds to show all markers
-- [ ] Add loading spinner while map loads
+### 5.9 Map View Component - Polish (Leaflet.js)
+- [ ] Fit map bounds to show all markers using L.featureGroup().getBounds()
+- [ ] Add loading state while map initializes
 - [ ] Test on mobile devices
-- [ ] Add zoom controls and map type selector
-- [ ] Ensure accessibility (keyboard navigation)
+- [ ] Add zoom controls (default in Leaflet)
+- [ ] Ensure accessibility (keyboard navigation works)
+- [ ] Add attribution for OpenStreetMap (required)
 
 ### 5.10 Export Buttons Component
 **Skill**: `frontend-developer` for export functionality
@@ -561,11 +585,11 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 
 ### 10.3 Environment Variables
 - [ ] Go to Vercel project settings → Environment Variables
-- [ ] Add OPENROUTER_API_KEY (production value)
-- [ ] Add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (production value)
-- [ ] Add GOOGLE_PLACES_API_KEY (production value)
+- [ ] Add OPENROUTER_API_KEY (production value - use free Gemini model)
+- [ ] Add YELP_API_KEY (production value - 500 requests/day free tier)
 - [ ] Verify keys are valid and have proper permissions
 - [ ] Set variables for Production, Preview, and Development environments
+- [ ] Note: Nominatim and Overpass API require no API keys (100% free)
 
 ### 10.4 Deploy & Test
 - [ ] Trigger deployment: `vercel --prod`
@@ -596,6 +620,60 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 
 ---
 
+## Appendix: Free API Architecture
+
+### API Stack Overview
+
+**Cost Optimization**: This project uses 100% free APIs to eliminate costs and API key complexity.
+
+**APIs Used**:
+1. **Nominatim (OpenStreetMap)** - Geocoding
+   - Free, no API key required
+   - Rate limit: 1 request/second
+   - Must include User-Agent header
+   - Usage policy: https://operations.osmfoundation.org/policies/nominatim/
+
+2. **Overpass API (OpenStreetMap)** - Venue data
+   - Free, no API key required
+   - Rate limit: Reasonable use (avoid heavy queries)
+   - Returns amenity data (restaurants, bars, cafes)
+   - Query language: Overpass QL
+
+3. **Yelp Fusion API** - Reviews, ratings, photos
+   - Free tier: 500 requests/day
+   - Requires API key (free signup)
+   - Provides reviews, ratings, price level, photos
+   - Best data quality for US venues
+
+4. **OpenRouter** - AI (search queries + recommendations)
+   - Free tier available with Gemini models
+   - Model: `google/gemini-2.0-flash-exp`
+   - Requires API key (free signup)
+
+5. **Leaflet.js** - Interactive maps
+   - Free, open-source mapping library
+   - Uses OpenStreetMap tiles (free)
+   - No API key required
+   - Must include OSM attribution
+
+### Rate Limiting Strategy
+
+- **Nominatim**: Implement 1 req/sec delay between calls
+- **Overpass**: Batch queries, cache results, avoid rapid-fire requests
+- **Yelp**: Track daily usage, implement graceful degradation at 500 req/day
+- **OpenRouter**: Use efficient prompts, cache AI responses when possible
+
+### Data Flow
+
+1. User enters location → **Nominatim** geocodes to lat/lng
+2. AI generates search queries → **OpenRouter** (Gemini)
+3. Search for venues → **Overpass API** (OSM amenities)
+4. Enrich with reviews/ratings → **Yelp Fusion API**
+5. AI analyzes venues → **OpenRouter** (Gemini)
+6. Display on map → **Leaflet.js** (OSM tiles)
+
+---
+
 ## Appendix: Skill Usage Guide
 
 ### When to Use Each Skill
@@ -604,13 +682,14 @@ Build the Date Night & Event Planner MVP as described in CLAUDE.md
 - Building React components (PlanningForm, VenueCard, MapView)
 - Tailwind CSS styling and responsive design
 - State management and React hooks
-- Google Maps integration
+- Leaflet.js map integration
 - PDF generation and export features
 
 **backend-architect**
 - API route structure and design
 - Type definitions and data modeling
-- Google Places API integration
+- Free API integrations (Nominatim, Overpass, Yelp)
+- Rate limiting and API throttling strategies
 - Error handling patterns
 - Service architecture decisions
 
