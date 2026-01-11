@@ -57,38 +57,52 @@ async function generateRecommendations(
     topReview: v.reviews[0]?.text || 'No reviews available',
   }));
 
-  const prompt = `You are an expert event planner. Analyze these venues and recommend the best matches for the user's occasion and preferences.
+  const prompt = `You are an expert event planner. Analyze these venues and recommend the BEST matches for the user's specific occasion and preferences.
 
 USER CONTEXT:
 Occasion: ${preferences.occasion}
 Budget: ${preferences.budget}
-Atmosphere: ${preferences.atmosphere || 'any'}
-Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'none'}
 Group Size: ${preferences.groupSize || 'not specified'}
+Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'none'}
+Desired Atmosphere: ${preferences.atmosphere || 'any'}
 Additional Preferences: ${preferences.additionalPreferences || 'none'}
 
-VENUES TO ANALYZE:
+AVAILABLE VENUES:
 ${JSON.stringify(venueData, null, 2)}
 
-For each venue, provide:
-1. matchScore (0-100): How well it matches the user's needs
-2. aiReasoning: 2-3 sentences explaining why this venue is a good match
-3. pros: 2-4 specific advantages for this occasion
-4. cons: 1-2 potential drawbacks or considerations
+TASK: Analyze each venue and provide:
+1. **matchScore** (0-100): How well this venue matches the user's specific needs
+   - Consider: occasion appropriateness, budget fit, atmosphere match, dietary compatibility
+   - 90-100: Perfect match
+   - 70-89: Great match with minor compromises
+   - 50-69: Good option but notable limitations
+   - Below 50: Poor match
 
-Return ONLY a JSON array of recommendations, sorted by matchScore (highest first).
+2. **aiReasoning** (2-3 sentences): Explain WHY this venue works for THIS specific occasion
+   - Be specific to the user's occasion and preferences
+   - Reference the venue's actual features (rating, reviews, etc.)
+
+3. **pros** (2-4 items): Specific advantages for THIS occasion
+   - Focus on what makes it great for their needs
+   - Be concrete and actionable
+
+4. **cons** (1-2 items): Honest potential drawbacks
+   - Practical considerations (reservations, parking, etc.)
+   - Be helpful, not overly negative
+
+CRITICAL: Return ONLY valid JSON. No markdown, no explanations, just the JSON array.
 Format:
 [
   {
-    "venueName": "Venue Name",
+    "venueName": "Exact Venue Name from list",
     "matchScore": 95,
-    "aiReasoning": "This venue is perfect for...",
-    "pros": ["Great atmosphere", "Excellent reviews", "Perfect price range"],
-    "cons": ["May need reservations"]
+    "aiReasoning": "This venue is perfect because...",
+    "pros": ["Specific advantage 1", "Specific advantage 2", "Specific advantage 3"],
+    "cons": ["Practical consideration"]
   }
 ]
 
-Return the top 5-10 recommendations only.`;
+Return TOP 5 recommendations ONLY, sorted by matchScore (highest first).`;
 
   try {
     const aiRecommendations = await callOpenRouterJSON<AIRecommendation[]>(prompt);
@@ -142,8 +156,8 @@ Return the top 5-10 recommendations only.`;
       }
     }
 
-    // Sort by match score (highest first)
-    return recommendedVenues.sort((a, b) => b.matchScore - a.matchScore).slice(0, 10);
+    // Sort by match score (highest first) and limit to top 5
+    return recommendedVenues.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5);
   } catch (error) {
     console.error('Error generating recommendations with AI:', error);
     // Fallback: return venues sorted by rating

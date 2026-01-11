@@ -1,19 +1,20 @@
 /**
  * Search Venues API Route
- * AI-powered venue search using:
- * 1. OpenRouter AI - Generate search queries based on occasion
- * 2. TomTom Search API - Search for venues with ratings, photos, price levels
+ * Uses:
+ * 1. OpenRouter (AI) - To generate relevant search terms
+ * 2. Overpass API (OSM) - To find venues
+ * 3. WikiData - To get images and descriptions
+ * 4. OpenTripMap - To get popularity ratings
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import type { UserPreferences } from '@/types/user-preferences';
-import type { VenueSearchResponse } from '@/types/venue';
+import type { VenueSearchResponse, Venue } from '@/types/venue';
 import { callOpenRouterJSON } from '@/lib/openrouter';
-import { searchMultipleQueries } from '@/lib/tomtom';
+import { searchVenuesOverpass } from '@/lib/overpass';
+import { getWikiDataDetails } from '@/lib/wikidata';
+import { getOpenTripMapDetails } from '@/lib/opentripmap';
 
-/**
- * Request body interface
- */
 interface SearchVenuesRequest {
   occasion: string;
   location: {
@@ -25,251 +26,150 @@ interface SearchVenuesRequest {
 }
 
 /**
- * Error response interface
- */
-interface SearchVenuesErrorResponse {
-  error: string;
-  code: string;
-}
-
-/**
  * Generates search queries using AI based on occasion and preferences
- *
- * @param occasion - Type of occasion (e.g., "date night", "team outing")
- * @param preferences - User preferences (budget, atmosphere, dietary restrictions, etc.)
- * @returns Array of search query strings
  */
 async function generateSearchQueries(
   occasion: string,
   preferences: Partial<UserPreferences>
 ): Promise<string[]> {
-  const prompt = `You are a local venue search expert. Generate 3-5 specific search queries for finding venues for the following occasion and preferences.
+  // Build context about dietary restrictions and atmosphere
+  const dietaryInfo = preferences.dietaryRestrictions?.length
+    ? `Dietary needs: ${preferences.dietaryRestrictions.join(', ')}. `
+    : '';
+  const atmosphereInfo = preferences.atmosphere
+    ? `Desired atmosphere: ${preferences.atmosphere}. `
+    : '';
+  const additionalInfo = preferences.additionalPreferences
+    ? `Additional preferences: ${preferences.additionalPreferences}. `
+    : '';
 
-Occasion: ${occasion}
-Budget: ${preferences.budget || 'any'}
-Atmosphere: ${preferences.atmosphere || 'any'}
-Dietary Restrictions: ${preferences.dietaryRestrictions?.join(', ') || 'none'}
-Group Size: ${preferences.groupSize || 'not specified'}
-Additional Preferences: ${preferences.additionalPreferences || 'none'}
+  const prompt = `You are a venue search expert. Generate 3-5 specific OpenStreetMap amenity search terms for finding perfect venues.
 
-Generate search queries that are specific and actionable. Focus on venue types, cuisines, and atmospheres that match the occasion.
+OCCASION: ${occasion}
+BUDGET: ${preferences.budget || 'any'}
+GROUP SIZE: ${preferences.groupSize || 'not specified'}
+${dietaryInfo}${atmosphereInfo}${additionalInfo}
 
-Examples:
-- For "romantic date night" → ["upscale Italian restaurants", "wine bars", "rooftop dining", "intimate bistros"]
-- For "team outing" → ["breweries", "sports bars", "group-friendly restaurants", "entertainment venues"]
-- For "birthday celebration" → ["trendy restaurants", "cocktail bars", "restaurants with private dining", "celebration venues"]
+IMPORTANT: Return search terms that match OpenStreetMap amenity types. Examples:
+- For romantic dates: ["fine_dining", "wine_bar", "french_restaurant"]
+- For team outings: ["pub", "brewery", "bbq_restaurant"]
+- For casual hangouts: ["cafe", "pizza_restaurant", "ice_cream"]
+- For upscale events: ["fine_dining", "cocktail_bar", "steakhouse"]
 
-Return ONLY a JSON array of 3-5 search query strings, no other text.
-Format: ["query1", "query2", "query3", "query4", "query5"]`;
+Return ONLY a valid JSON array of 3-5 specific venue type strings that would be found in OpenStreetMap.
+Format: ["venue_type_1", "venue_type_2", "venue_type_3"]`;
 
   try {
     const queries = await callOpenRouterJSON<string[]>(prompt);
-
-    // Validate response is an array of strings
-    if (!Array.isArray(queries) || queries.length === 0) {
-      console.warn('AI returned invalid search queries, using fallback');
-      return ['restaurants', 'bars', 'cafes'];
+    if (Array.isArray(queries) && queries.length > 0) {
+      return queries.slice(0, 5);
     }
-
-    // Filter and validate queries
-    const validQueries = queries
-      .filter((q) => typeof q === 'string' && q.trim().length > 0)
-      .map((q) => q.trim())
-      .slice(0, 5); // Max 5 queries
-
-    if (validQueries.length === 0) {
-      return ['restaurants', 'bars', 'cafes'];
-    }
-
-    return validQueries;
-  } catch (error) {
-    console.error('Error generating search queries with AI:', error);
-    // Fallback to basic queries based on occasion
-    return ['restaurants', 'bars', 'cafes'];
+    console.warn('AI returned invalid search queries, using fallback');
+    return ['restaurant', 'bar', 'cafe'];
+  } catch (e) {
+    console.error('Failed to generate search queries:', e);
+    return ['restaurant', 'bar', 'cafe'];
   }
 }
 
-/**
- * Search Venues API endpoint handler
- *
- * @route POST /api/search-venues
- * @body { occasion, location, radius, preferences }
- * @returns { venues: Venue[], searchQueries: string[] }
- *
- * @example
- * POST /api/search-venues
- * Body: {
- *   "occasion": "romantic date night",
- *   "location": { "lat": 40.7128, "lng": -74.0060 },
- *   "radius": 5000,
- *   "preferences": { "budget": "medium", "atmosphere": "romantic" }
- * }
- */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<VenueSearchResponse | SearchVenuesErrorResponse>
+  res: NextApiResponse<VenueSearchResponse | { error: string }>
 ) {
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return res.status(405).json({
-      error: 'Method not allowed. Use POST.',
-      code: 'METHOD_NOT_ALLOWED',
-    });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Parse and validate request body
-    const { occasion, location, radius, preferences } =
-      req.body as SearchVenuesRequest;
+    const { occasion, location, radius, preferences } = req.body as SearchVenuesRequest;
 
-    // Validate required fields
-    if (
-      !occasion ||
-      typeof occasion !== 'string' ||
-      occasion.trim().length === 0
-    ) {
-      return res.status(400).json({
-        error: 'Occasion is required and must be a non-empty string.',
-        code: 'MISSING_OCCASION',
-      });
+    if (!location?.lat || !location?.lng) {
+      return res.status(400).json({ error: 'Invalid location' });
     }
 
-    if (
-      !location ||
-      typeof location.lat !== 'number' ||
-      typeof location.lng !== 'number'
-    ) {
-      return res.status(400).json({
-        error: 'Location with valid lat/lng coordinates is required.',
-        code: 'INVALID_LOCATION',
-      });
+    // 1. Generate Search Queries
+    const queries = await generateSearchQueries(occasion, preferences);
+    console.log('Search queries:', queries);
+
+    // 2. Search Overpass (OSM) sequentially to avoid overwhelming the API
+    // Running in parallel can cause 504 timeouts
+    const results: (Partial<Venue> & { wikidata?: string })[][] = [];
+    for (const query of queries) {
+      const venueResults = await searchVenuesOverpass(query, location.lat, location.lng, radius);
+      results.push(venueResults);
+      // Small delay between queries to be respectful to the free API
+      if (queries.indexOf(query) < queries.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
+    
+    // Flatten and deduplicate
+    const rawVenuesMap = new Map<string, Partial<Venue> & { wikidata?: string }>();
+    results.flat().forEach(v => {
+      if (v.placeId && !rawVenuesMap.has(v.placeId)) {
+        rawVenuesMap.set(v.placeId, v);
+      }
+    });
+    
+    let venues = Array.from(rawVenuesMap.values());
+    
+    // Limit to top 20 for enrichment to save time/bandwidth
+    venues = venues.slice(0, 20);
 
-    if (
-      !radius ||
-      typeof radius !== 'number' ||
-      radius < 100 ||
-      radius > 50000
-    ) {
-      return res.status(400).json({
-        error: 'Radius must be a number between 100 and 50000 meters.',
-        code: 'INVALID_RADIUS',
-      });
-    }
+    // 3. Enrich with WikiData (Images/Descriptions)
+    // Collect all wikidata IDs
+    const wikiIds = venues.map(v => v.wikidata).filter((id): id is string => !!id);
+    
+    // Fetch batch details
+    const wikiDetails = await getWikiDataDetails(wikiIds);
 
-    // Validate coordinates
-    if (location.lat < -90 || location.lat > 90) {
-      return res.status(400).json({
-        error: 'Latitude must be between -90 and 90.',
-        code: 'INVALID_LATITUDE',
-      });
-    }
+    // 4. Enrich loop
+    const enrichedVenues: Venue[] = await Promise.all(venues.map(async (v) => {
+      let imageUrl: string | undefined;
+      let description: string | undefined;
+      let rating = 0; // Default 0
 
-    if (location.lng < -180 || location.lng > 180) {
-      return res.status(400).json({
-        error: 'Longitude must be between -180 and 180.',
-        code: 'INVALID_LONGITUDE',
-      });
-    }
+      // A. Try WikiData
+      if (v.wikidata && wikiDetails[v.wikidata]) {
+        imageUrl = wikiDetails[v.wikidata].imageUrl;
+        description = wikiDetails[v.wikidata].description;
+      }
 
-    // Step 1: Generate search queries using AI
-    console.log(`Generating search queries for occasion: ${occasion}`);
-    const searchQueries = await generateSearchQueries(
-      occasion,
-      preferences || {}
-    );
-    console.log(`Generated queries:`, searchQueries);
+      // B. Try OpenTripMap if no image or to get 'popularity' as rating
+      // (Only do this for a few to avoid rate limits if we didn't get good data)
+      if (!imageUrl || !rating) {
+        const otm = await getOpenTripMapDetails(v.name!, v.location!.lat, v.location!.lng);
+        if (otm) {
+          if (!imageUrl) imageUrl = otm.image;
+          if (!description) description = otm.text;
+          // OTM rate is 1, 2, 3, or 7 (heritage). Map 1-3 to 3-5 stars roughly?
+          // Let's just use it raw or map 1->3, 2->4, 3->5
+          if (otm.rate) rating = Math.min(5, otm.rate + 2);
+        }
+      }
 
-    // Step 2: Search TomTom for venues (with ratings, photos, price levels)
-    console.log(`Searching for venues with radius: ${radius}m`);
-    const venues = await searchMultipleQueries(
-      searchQueries,
-      location.lat,
-      location.lng,
-      radius
-    );
-    console.log(`Found ${venues.length} venues from TomTom`);
+      // Final object
+      return {
+        placeId: v.placeId!,
+        name: v.name!,
+        address: v.address!,
+        location: v.location!,
+        priceLevel: 2, // Unknown in OSM, default to medium
+        rating: rating || 3.5, // Fallback rating
+        photos: imageUrl ? [imageUrl] : [],
+        reviews: description ? [{ author: 'Wiki info', rating: 5, text: description, time: Date.now() }] : [],
+        openingHours: []
+      };
+    }));
 
-    if (venues.length === 0) {
-      return res.status(200).json({
-        venues: [],
-        searchQueries,
-      });
-    }
+    // Filter out ones with no name or really bad data if necessary
+    const finalVenues = enrichedVenues.filter(v => v.name !== 'Unknown Venue');
 
-    // Step 3: Filter venues with ratings (optional quality filter)
-    const filteredVenues = venues.filter((venue) => {
-      // Keep venues with good data
-      return (
-        venue.rating > 0 || venue.photos.length > 0 || venue.reviews.length > 0
-      );
+    res.status(200).json({
+      venues: finalVenues,
+      searchQueries: queries
     });
 
-    // If filtering removed too many venues, use all venues
-    const finalVenues =
-      filteredVenues.length >= 5 ? filteredVenues : venues;
-
-    // Step 4: Limit to top 15 venues to control response size
-    const limitedVenues = finalVenues.slice(0, 15);
-
-    // Return success response
-    return res.status(200).json({
-      venues: limitedVenues,
-      searchQueries,
-    });
   } catch (error) {
-    // Handle specific error cases
-    if (error instanceof Error) {
-      // OpenRouter API error
-      if (error.message.includes('OPENROUTER_API_KEY')) {
-        return res.status(500).json({
-          error: 'AI service is not configured. Please contact support.',
-          code: 'AI_SERVICE_ERROR',
-        });
-      }
-
-      // TomTom API error
-      if (error.message.includes('TOMTOM_API_KEY')) {
-        return res.status(500).json({
-          error:
-            'Venue search service is not configured. Please contact support.',
-          code: 'VENUE_SERVICE_ERROR',
-        });
-      }
-
-      // Rate limiting error
-      if (error.message.includes('rate limit') || error.message.includes('429')) {
-        return res.status(429).json({
-          error: 'API rate limit exceeded. Please try again in a moment.',
-          code: 'RATE_LIMIT_EXCEEDED',
-        });
-      }
-
-      // API service unavailable
-      if (
-        error.message.includes('503') ||
-        error.message.includes('unavailable')
-      ) {
-        return res.status(503).json({
-          error:
-            'Venue search service is temporarily unavailable. Please try again later.',
-          code: 'SERVICE_UNAVAILABLE',
-        });
-      }
-
-      // Generic error with message
-      console.error('Search venues error:', error.message);
-      return res.status(500).json({
-        error: 'Failed to search for venues. Please try again later.',
-        code: 'SEARCH_FAILED',
-      });
-    }
-
-    // Unknown error
-    console.error('Unknown search venues error:', error);
-    return res.status(500).json({
-      error: 'An unexpected error occurred while searching for venues.',
-      code: 'INTERNAL_ERROR',
-    });
+    console.error('Search handler error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 }

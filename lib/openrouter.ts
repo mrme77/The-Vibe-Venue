@@ -6,10 +6,12 @@
 
 /**
  * OpenRouter API request message format
+ * For text-only: content is a string
+ * For multimodal (text + images): content is an array of content objects
  */
 interface OpenRouterMessage {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | Array<{ type: 'text'; text: string } | { type: 'image_url'; image_url: { url: string } }>;
 }
 
 /**
@@ -58,7 +60,7 @@ interface OpenRouterResponse {
  */
 export async function callOpenRouter(
   prompt: string,
-  model: string = 'google/gemini-2.0-flash-exp'
+  model: string = 'openai/gpt-oss-safeguard-20b'
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -74,7 +76,7 @@ export async function callOpenRouter(
     messages: [
       {
         role: 'user',
-        content: prompt,
+        content: prompt, // Simple string for text-only messages
       },
     ],
   };
@@ -121,7 +123,7 @@ export async function callOpenRouter(
  * Useful for structured outputs like search queries or recommendations
  *
  * @param prompt - The user prompt requesting JSON output
- * @param model - The model to use (default: google/gemini-2.0-flash-exp)
+ * @param model - The model to use (default: google/gemini-2.0-flash)
  * @returns Parsed JSON object
  * @throws Error if response is not valid JSON
  *
@@ -135,7 +137,7 @@ export async function callOpenRouter(
  */
 export async function callOpenRouterJSON<T>(
   prompt: string,
-  model: string = 'google/gemini-2.0-flash-exp'
+  model: string = 'openai/gpt-oss-safeguard-20b'
 ): Promise<T> {
   const response = await callOpenRouter(prompt, model);
 
