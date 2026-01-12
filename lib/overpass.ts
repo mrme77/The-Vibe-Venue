@@ -27,6 +27,10 @@ interface OSMElement {
     website?: string;
     phone?: string;
     wikidata?: string; // Critical for linking to images
+    opening_hours?: string;
+    'disused:amenity'?: string;
+    demolished?: string;
+    ruins?: string;
     [key: string]: string | undefined;
   };
 }
@@ -93,11 +97,13 @@ export async function searchVenuesOverpass(
   // Limit radius to max 5km to avoid timeouts
   const limitedRadius = Math.min(radius, 5000);
 
+  // Exclude permanently closed venues in the query
+  // We filter out nodes/ways with disused:amenity tag
   const ql = `
     [out:json][timeout:15];
     (
-      node${selector}(around:${limitedRadius},${lat},${lng});
-      way${selector}(around:${limitedRadius},${lat},${lng});
+      node${selector}(around:${limitedRadius},${lat},${lng})["disused:amenity"!~"."]["demolished"!="yes"]["ruins"!="yes"];
+      way${selector}(around:${limitedRadius},${lat},${lng})["disused:amenity"!~"."]["demolished"!="yes"]["ruins"!="yes"];
     );
     out center 20;
   `;
@@ -147,11 +153,33 @@ export async function searchVenuesOverpass(
 }
 
 /**
+ * Checks if a venue is permanently closed based on OSM tags
+ */
+function isPermanentlyClosed(tags?: OSMElement['tags']): boolean {
+  if (!tags) return false;
+
+  // Check for explicit closed/disused tags
+  if (tags['disused:amenity']) return true;
+  if (tags.demolished === 'yes') return true;
+  if (tags.ruins === 'yes') return true;
+
+  // Check opening_hours for permanent closure indicators
+  const hours = tags.opening_hours?.toLowerCase();
+  if (hours) {
+    if (hours.includes('closed') && !hours.includes('mo-')) return true; // "closed" without day schedule
+    if (hours === 'off') return true;
+  }
+
+  return false;
+}
+
+/**
  * Parses Overpass API response into venue objects
  */
 function parseOverpassResponse(data: OverpassResponse): (Partial<Venue> & { wikidata?: string })[] {
   return data.elements
     .filter(el => el.tags && el.tags.name) // Must have a name
+    .filter(el => !isPermanentlyClosed(el.tags)) // Filter out permanently closed venues
     .map(el => {
       const lat = el.lat || el.center?.lat || 0;
       const lng = el.lon || el.center?.lon || 0;

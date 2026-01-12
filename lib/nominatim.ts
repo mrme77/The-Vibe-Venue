@@ -5,6 +5,8 @@
  * Rate Limit: Maximum 1 request per second
  */
 
+import axios from 'axios';
+
 /**
  * Nominatim API response format
  */
@@ -80,21 +82,14 @@ export async function geocodeLocation(
   const url = `https://nominatim.openstreetmap.org/search?q=${encodedLocation}&format=json&limit=1`;
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await axios.get<NominatimResponse[]>(url, {
       headers: {
-        'User-Agent': 'DateNightPlanner/1.0 (https://github.com/yourusername/datenight)',
+        'User-Agent': 'VenueVibe/1.0 (https://venuevibe.app)',
         'Accept': 'application/json',
       },
     });
 
-    if (!response.ok) {
-      throw new Error(
-        `Nominatim API error (${response.status}): ${response.statusText}`
-      );
-    }
-
-    const data: NominatimResponse[] = await response.json();
+    const data = response.data;
 
     if (!data || data.length === 0) {
       throw new Error(
@@ -153,21 +148,14 @@ export async function reverseGeocode(
   const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await axios.get<NominatimResponse>(url, {
       headers: {
-        'User-Agent': 'DateNightPlanner/1.0 (https://github.com/yourusername/datenight)',
+        'User-Agent': 'VenueVibe/1.0 (https://venuevibe.app)',
         'Accept': 'application/json',
       },
     });
 
-    if (!response.ok) {
-      throw new Error(
-        `Nominatim API error (${response.status}): ${response.statusText}`
-      );
-    }
-
-    const data: NominatimResponse = await response.json();
+    const data = response.data;
 
     if (!data || !data.display_name) {
       throw new Error('Unable to reverse geocode coordinates');

@@ -171,6 +171,62 @@
   - ✅ Updated footer from dark translucent to light/slate with subtle backdrop blur
   - ✅ Footer links now use purple/pink accent colors matching brand theme
   - ✅ Overall design is now cleaner, more professional, and less visually overwhelming
+- [x] **Optimized hero section and layout for minimal scrolling (January 11, 2026):**
+  - ✅ Simplified hero section to single line with icon and title side-by-side
+  - ✅ Removed subtitle "Find & Book the Perfect Venue" for space efficiency
+  - ✅ Reduced header padding from py-12 md:py-16 to py-4 md:py-6
+  - ✅ Changed logo size from 14x14 to 12x12 pixels
+  - ✅ Reduced title size from text-5xl md:text-6xl to text-4xl md:text-5xl
+  - ✅ Changed layout from 2-column grid (form left, results right) to stacked rows
+  - ✅ Form section now spans full width at top of page
+  - ✅ Results section spans full width below form
+  - ✅ Reduced welcome state padding from p-12 to p-8 and removed min-height
+  - ✅ Entire interface now fits on screen without scrolling on most devices
+  - ✅ More efficient use of vertical space throughout the page
+- [x] **Updated .gitignore to exclude markdown files (January 11, 2026):**
+  - ✅ Added rule to ignore all *.md files
+  - ✅ Added exception to keep README.md tracked in git
+  - ✅ Files like PROGRESS.md, CLAUDE.md now excluded from version control
+- [x] **Comprehensive form redesign with modern UI/UX best practices (January 11, 2026):**
+  - ✅ **Responsive grid layout:** Location (40%) and Occasion (60%) side-by-side on desktop, stacked on mobile
+  - ✅ **Enhanced input fields:** Added pin icon to Location, party emoji to Occasion with helper text
+  - ✅ **Occasion presets:** Quick-select chips for "Date night", "Birthday", "Team dinner", "Client meeting"
+  - ✅ **Redesigned budget selector:** Premium segmented control with gradient backgrounds
+    - $ (Budget): Blue-to-violet gradient
+    - $$ (Moderate): Violet-to-purple gradient
+    - $$$ (Upscale): Purple-to-pink gradient with glow effect
+    - Any (Flexible): Clean white/dark styling
+    - Scale animation on selection (105% scale) with shadow effects
+  - ✅ **Enhanced radius slider:** Larger gradient thumb (purple-to-pink), tick marks at 1, 5, 10, 25 miles
+  - ✅ **Progressive disclosure:** Optional fields (Group Size, Atmosphere, Dietary, Additional) hidden by default
+  - ✅ **Improved submit button:** Search icon, disabled state when form invalid, "Finding the vibe…" loading text
+  - ✅ **Typography updates:** Uppercase semibold labels, improved input heights (py-3), better focus states
+  - ✅ **Accessibility:** aria-pressed for budget buttons, proper keyboard focus rings, semantic HTML
+- [x] **Hero section enhancements (January 11, 2026):**
+  - ✅ Added tagline: "Find the perfect place for every moment"
+  - ✅ Subtle pulse animation on tagline (4-second loop, opacity 0.8-1)
+  - ✅ Improved logo and title spacing for better visual hierarchy
+- [x] **Fixed geocoding API 500 error (January 11, 2026):**
+  - ✅ Replaced native `fetch` API with `axios` in [nominatim.ts](lib/nominatim.ts)
+  - ✅ Updated geocodeLocation function to use axios.get with proper headers
+  - ✅ Updated reverseGeocode function to use axios.get
+  - ✅ Changed User-Agent from "DateNightPlanner" to "VenueVibe" for consistency
+  - ✅ Fixed 500 error that prevented location searches from working
+- [x] **Implemented auto-scroll to results (January 11, 2026):**
+  - ✅ Added "results-section" ID to results container in [index.tsx](pages/index.tsx#L199)
+  - ✅ Implemented smooth scroll to results after venues load
+  - ✅ Added 300ms delay after form collapse for smooth transition
+  - ✅ Form automatically collapses when results appear
+  - ✅ Page scrolls to map and recommendations without manual scrolling
+  - ✅ Improved UX by eliminating need to scroll down after search
+- [x] **Filtered out permanently closed venues (January 11, 2026):**
+  - ✅ Added `isPermanentlyClosed()` helper function in [overpass.ts](lib/overpass.ts#L156)
+  - ✅ Filter checks for OSM tags: `disused:amenity`, `demolished=yes`, `ruins=yes`
+  - ✅ Filter checks `opening_hours` for permanent closure indicators ("closed", "off")
+  - ✅ Updated Overpass QL query to exclude closed venues at query level
+  - ✅ Added filter in `parseOverpassResponse()` to double-check closed status
+  - ✅ Recommendations now only include active, open venues
+  - ✅ Improved data quality by excluding defunct businesses
 
 ---
 

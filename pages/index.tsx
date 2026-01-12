@@ -14,6 +14,7 @@ export default function Home() {
   const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
   const [venues, setVenues] = useState<Venue[] | null>(null);
   const [recommendations, setRecommendations] = useState<RecommendedVenue[] | null>(null);
+  const [isFormCollapsed, setIsFormCollapsed] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<string>(''); // 'geocoding', 'searching', 'analyzing'
@@ -64,6 +65,15 @@ export default function Home() {
       });
 
       setRecommendations(recRes.data.recommendations);
+      setIsFormCollapsed(true);
+
+      // Auto-scroll to results section after a brief delay for collapse animation
+      setTimeout(() => {
+        const resultsSection = document.getElementById('results-section');
+        if (resultsSection) {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 300);
     } catch (err: unknown) {
       const error = err as { response?: { data?: { error?: string } }; message?: string };
       console.error('Planning error:', err);
@@ -83,6 +93,7 @@ export default function Home() {
     setVenues(null);
     setRecommendations(null);
     setError(null);
+    setIsFormCollapsed(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -122,40 +133,57 @@ export default function Home() {
 
       <main className="container mx-auto px-4 relative z-10">
         {/* Hero Section */}
-        <header className="text-center py-12 md:py-16 mb-8 relative">
+        <header className="text-center py-4 md:py-6 mb-6 relative">
           <div className="relative z-10">
-            {/* Logo/Icon */}
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 transform hover:scale-110 transition-transform duration-300">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Logo and Title */}
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 transform hover:scale-110 transition-transform duration-300">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
+              <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                VenueVibe
+              </h1>
             </div>
-
-            <h1 className="text-5xl md:text-6xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent mb-3">
-              VenueVibe
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-800 dark:text-gray-200 font-bold mb-2">
-              Find & Book the Perfect Venue
-            </p>
-            <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto font-medium">
-              Discover the best event spaces for any occasion
+            {/* Tagline */}
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 font-medium animate-pulse-slow">
+              Find the perfect place for every moment
             </p>
           </div>
         </header>
 
         {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12" style={{ listStyle: 'none' }}>
+        <div className="space-y-6 pb-12" style={{ listStyle: 'none' }}>
 
-          {/* Left Column: Form */}
-          <div className="lg:col-span-4 space-y-6" style={{ listStyle: 'none' }}>
-            <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-purple-200/50 dark:border-purple-700/50">
-              <h2 className="text-xl font-bold mb-4 flex items-center text-gray-900 dark:text-zinc-100">
+          {/* Form Section */}
+          <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-6 rounded-xl shadow-2xl border border-purple-200/50 dark:border-purple-700/50 transition-all duration-300">
+            <div 
+              className="flex justify-between items-center cursor-pointer"
+              onClick={() => setIsFormCollapsed(!isFormCollapsed)}
+            >
+              <h2 className="text-xl font-bold flex items-center text-gray-900 dark:text-zinc-100 select-none">
                 <span className="bg-gradient-to-br from-purple-500 to-pink-500 text-white p-2 rounded-full mr-3 text-sm shadow-lg">1</span>
                 Your Preferences
               </h2>
+              <button 
+                type="button"
+                className="text-gray-500 hover:text-purple-600 transition-colors focus:outline-none"
+                aria-label={isFormCollapsed ? "Expand preferences" : "Collapse preferences"}
+              >
+                <svg 
+                  className={`w-6 h-6 transform transition-transform duration-300 ${isFormCollapsed ? '-rotate-90' : 'rotate-0'}`} 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isFormCollapsed ? 'max-h-0 opacity-0 mt-0' : 'max-h-[2000px] opacity-100 mt-4'}`}>
               <PlanningForm onSubmit={handleFormSubmit} loading={loading} />
 
               {error && (
@@ -167,12 +195,12 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Column: Results */}
-          <div className="lg:col-span-8 space-y-6" style={{ listStyle: 'none' }}>
+          {/* Results Section */}
+          <div id="results-section" style={{ listStyle: 'none' }}>
 
             {/* Welcome State */}
             {!recommendations && !loading && !venues && (
-              <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-12 rounded-xl shadow-2xl border border-purple-200/50 dark:border-purple-700/50 text-center flex flex-col items-center justify-center h-full min-h-[400px]">
+              <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm p-8 rounded-xl shadow-2xl border border-purple-200/50 dark:border-purple-700/50 text-center flex flex-col items-center justify-center">
                 <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-full flex items-center justify-center mb-6 shadow-lg">
                   <svg className="w-12 h-12 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
