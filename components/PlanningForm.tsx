@@ -88,7 +88,7 @@ export default function PlanningForm({ onSubmit, loading = false }: PlanningForm
       <div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-zinc-100">Plan Your Event</h2>
         <p className="mt-2 text-sm text-gray-600 dark:text-zinc-400">
-          Tell us about your occasion and we'll find the perfect venues
+          Tell us about your occasion and we&apos;ll find the perfect venues
         </p>
       </div>
 

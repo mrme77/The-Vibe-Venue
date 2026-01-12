@@ -5,6 +5,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { Venue } from '@/types/venue';
+import type L from 'leaflet';
 
 interface MapViewProps {
   venues: Venue[];
@@ -13,7 +14,7 @@ interface MapViewProps {
 
 export default function MapView({ venues, center }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
     // Only run on client side
@@ -31,6 +32,7 @@ export default function MapView({ venues, center }: MapViewProps) {
       }
 
       // Fix Leaflet default marker icon issue with Next.js
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -51,14 +53,14 @@ export default function MapView({ venues, center }: MapViewProps) {
       }).addTo(map);
 
       // Add markers for venues
-      const markers: any[] = [];
+      const markers: L.Marker[] = [];
 
       console.log('MapView: Creating markers for venues:', venues);
 
       venues.forEach((venue, index) => {
         console.log(`MapView: Adding marker ${index + 1}:`, venue.name, 'at', venue.location);
         // Create custom icon for top recommendation
-        let icon = L.icon({
+        const icon = L.icon({
           iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',

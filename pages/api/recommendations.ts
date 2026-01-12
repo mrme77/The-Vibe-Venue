@@ -80,7 +80,8 @@ TASK: Analyze each venue and provide:
 
 2. **aiReasoning** (2-3 sentences): Explain WHY this venue works for THIS specific occasion
    - Be specific to the user's occasion and preferences
-   - Reference the venue's actual features (rating, reviews, etc.)
+   - Reference the venue's actual features and atmosphere
+   - Do NOT mention ratings or review scores
 
 3. **pros** (2-4 items): Specific advantages for THIS occasion
    - Focus on what makes it great for their needs

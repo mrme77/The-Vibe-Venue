@@ -147,7 +147,7 @@ export async function callOpenRouterJSON<T>(
     const jsonString = jsonMatch ? jsonMatch[1] : response;
 
     return JSON.parse(jsonString.trim()) as T;
-  } catch (error) {
+  } catch {
     throw new Error(
       `Failed to parse OpenRouter response as JSON. Response: ${response.substring(0, 200)}...`
     );
