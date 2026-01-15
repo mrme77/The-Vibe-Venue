@@ -20,10 +20,6 @@ export default function MapView({ venues, center }: MapViewProps) {
     // Only run on client side
     if (typeof window === 'undefined' || !mapRef.current) return;
 
-    // Debug logging
-    console.log('MapView: Rendering map with', venues.length, 'venues');
-    console.log('MapView: Center coordinates:', center);
-
     // Dynamically import Leaflet (client-side only)
     import('leaflet').then((L) => {
       // Cleanup existing map
@@ -55,11 +51,8 @@ export default function MapView({ venues, center }: MapViewProps) {
       // Add markers for venues
       const markers: L.Marker[] = [];
 
-      console.log('MapView: Creating markers for venues:', venues);
-
-      venues.forEach((venue, index) => {
-        console.log(`MapView: Adding marker ${index + 1}:`, venue.name, 'at', venue.location);
-        // Create custom icon for top recommendation
+      venues.forEach((venue) => {
+        // Create custom icon
         const icon = L.icon({
           iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
           iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -108,16 +101,16 @@ export default function MapView({ venues, center }: MapViewProps) {
   }, [venues, center]);
 
   return (
-    <div className="relative w-full h-full bg-gray-100 dark:bg-zinc-800 transition-colors">
+    <div className="relative w-full h-full bg-stone-100 dark:bg-stone-800 transition-colors">
       {/* Map Container */}
-      <div ref={mapRef} className="w-full h-full rounded-lg overflow-hidden shadow-md dark:shadow-none" />
+      <div ref={mapRef} className="w-full h-full rounded-lg overflow-hidden" />
 
       {/* Loading State */}
       {venues.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-900 rounded-lg transition-colors">
+        <div className="absolute inset-0 flex items-center justify-center bg-stone-100 dark:bg-stone-900 rounded-lg transition-colors">
           <div className="text-center">
             <svg
-              className="w-16 h-16 text-gray-400 dark:text-zinc-600 mx-auto mb-4"
+              className="w-16 h-16 text-stone-400 dark:text-stone-600 mx-auto mb-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -129,7 +122,7 @@ export default function MapView({ venues, center }: MapViewProps) {
                 d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
               />
             </svg>
-            <p className="text-gray-500 dark:text-zinc-500">Map will appear here when venues are found</p>
+            <p className="text-stone-500 dark:text-stone-500">Map will appear here when venues are found</p>
           </div>
         </div>
       )}

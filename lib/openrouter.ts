@@ -88,7 +88,7 @@ export async function callOpenRouter(
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-        'X-Title': 'Date Night Planner',
+        'X-Title': 'VenueVibe',
       },
       body: JSON.stringify(requestBody),
     });

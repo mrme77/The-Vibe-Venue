@@ -1,5 +1,5 @@
 /**
- * Shared utility functions for the Date Night Planner application
+ * Shared utility functions for the VenueVibe application
  */
 
 /**

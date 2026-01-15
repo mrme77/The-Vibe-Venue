@@ -1,7 +1,24 @@
 import "@/styles/globals.css";
 import "leaflet/dist/leaflet.css";
 import type { AppProps } from "next/app";
+import { Outfit, DM_Sans } from "next/font/google";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-outfit",
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+});
 
 export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
+  return (
+    <main className={`${outfit.variable} ${dmSans.variable}`}>
+      <Component {...pageProps} />
+    </main>
+  );
 }

@@ -186,12 +186,13 @@ This project demonstrates how to build a full-featured AI application at **zero 
 
 ## 🎨 UI/UX Highlights
 
-- **Modern Design**: Gradient backgrounds with animated blobs
+- **Refined Editorial Design**: Sophisticated teal + amber color palette with glassmorphism effects
+- **Custom Typography**: Outfit display font paired with DM Sans body text
 - **Dark Mode**: Full support with smooth transitions
 - **Responsive Layout**: Mobile-first design that scales beautifully
-- **Interactive Elements**: Smooth hover effects and animations
+- **Interactive Elements**: Hover lift effects, subtle animations, and micro-interactions
 - **Accessibility**: ARIA labels, keyboard navigation, semantic HTML
-- **Loading States**: Fullscreen loading overlay with progress indicators
+- **Loading States**: Dual-ring animated spinner with backdrop blur
 
 ---
 
