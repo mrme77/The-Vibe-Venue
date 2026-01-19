@@ -5,6 +5,7 @@ import VenueCard from '@/components/VenueCard';
 import MapView from '@/components/MapView';
 import ExportButtons from '@/components/ExportButtons';
 import CreditsModal from '@/components/CreditsModal';
+import BackgroundMusic from '@/components/BackgroundMusic';
 import type { UserPreferences } from '@/types/user-preferences';
 import type { Venue, RecommendedVenue, RecommendationResponse, VenueSearchResponse } from '@/types/venue';
 import axios from 'axios';
@@ -313,6 +314,9 @@ export default function Home() {
 
       {/* Credits Modal */}
       <CreditsModal />
+
+      {/* Background Music Player */}
+      <BackgroundMusic />
     </div>
   );
 }

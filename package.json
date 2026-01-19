@@ -1,6 +1,9 @@
 {
-  "name": "temp-nextjs",
+  "name": "venuevibe",
   "version": "0.1.0",
+  "description": "AI-powered venue discovery for date nights, team outings, and social gatherings",
+  "author": "Pasquale Salomone",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev",

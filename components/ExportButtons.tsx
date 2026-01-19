@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import type { RecommendedVenue } from '@/types/venue';
 import type { UserPreferences } from '@/types/user-preferences';
-import { generateTextSummary } from '@/lib/pdf-generator';
+import { generateTextSummary } from '@/lib/text-generator';
 
 interface ExportButtonsProps {
   recommendations: RecommendedVenue[];

@@ -226,9 +226,7 @@ export default async function handler(
     }
 
     // Generate recommendations using AI
-    console.log(`Generating recommendations for ${venues.length} venues`);
     const recommendations = await generateRecommendations(venues, preferences);
-    console.log(`Generated ${recommendations.length} recommendations`);
 
     // Return success response
     return res.status(200).json({

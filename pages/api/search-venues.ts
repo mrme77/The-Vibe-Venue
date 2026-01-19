@@ -87,7 +87,6 @@ export default async function handler(
 
     // 1. Generate Search Queries
     const queries = await generateSearchQueries(occasion, preferences);
-    console.log('Search queries:', queries);
 
     // 2. Search Overpass (OSM) sequentially to avoid overwhelming the API
     // Running in parallel can cause 504 timeouts

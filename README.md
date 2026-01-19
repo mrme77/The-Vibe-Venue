@@ -4,10 +4,10 @@
 
 VenueVibe is a privacy-first web application that generates personalized venue recommendations for date nights, team outings, celebrations, and social gatherings. Using AI and free open-source APIs, it provides intelligent suggestions with interactive maps, detailed reasoning, and zero data retention.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38bdf8?logo=tailwindcss)
-![License](https://img.shields.io/badge/License-MIT-green)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38bdf8?logo=tailwindcss)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
@@ -16,6 +16,7 @@ VenueVibe is a privacy-first web application that generates personalized venue r
 - **AI-Powered Recommendations**: Gemini AI analyzes your preferences and generates personalized venue suggestions
 - **Smart Search**: AI dynamically generates search queries based on your occasion and preferences
 - **Interactive Maps**: Leaflet.js-powered maps with OpenStreetMap tiles showing all venue locations
+- **Relaxing Background Music**: Optional autoplay ambient music with elegant volume controls
 - **Privacy-First**: 100% stateless architecture - no databases, no user tracking, no data retention
 - **Zero Cost**: Built entirely with free APIs and open-source technologies
 - **Dark Mode**: Full dark mode support across the entire application
@@ -60,7 +61,18 @@ VenueVibe is a privacy-first web application that generates personalized venue r
    npm run dev
    ```
 
-5. **Open your browser**
+5. **(Optional) Add background music**
+
+   Download royalty-free music from [Pixabay Music](https://pixabay.com/music/):
+   ```bash
+   # 1. Download a relaxing ambient track (MP3 format)
+   # 2. Rename to: background-music.mp3
+   # 3. Place in: public/music/background-music.mp3
+   ```
+
+   See `/public/music/README.md` for detailed setup instructions.
+
+6. **Open your browser**
 
    Navigate to [http://localhost:3000](http://localhost:3000)
 
@@ -100,6 +112,7 @@ datenight/
 │   ├── VenueCard.tsx        # Venue display cards
 │   ├── MapView.tsx          # Leaflet map integration
 │   ├── ExportButtons.tsx    # Copy to clipboard functionality
+│   ├── BackgroundMusic.tsx  # Autoplay music with volume controls
 │   └── CreditsModal.tsx     # Attribution and credits modal
 ├── pages/
 │   ├── api/                 # Next.js API routes
@@ -113,7 +126,12 @@ datenight/
 │   ├── overpass.ts          # OSM venue search client
 │   ├── wikidata.ts          # WikiData enrichment client
 │   ├── openrouter.ts        # OpenRouter AI client
+│   ├── text-generator.ts    # Text summary generator for export
 │   └── utils.ts             # Helper functions
+├── public/               # Static assets
+│   └── music/               # Background music folder
+│       ├── background-music.mp3  # User-provided music file (gitignored)
+│       └── README.md             # Music setup instructions
 ├── types/                # TypeScript type definitions
 │   ├── venue.ts             # Venue and recommendation types
 │   └── user-preferences.ts  # User input types
@@ -150,6 +168,8 @@ datenight/
 7. **Results Display** → Interactive map with venue markers and detailed venue cards
 
 8. **Export** → Copy recommendations to clipboard for easy sharing
+
+9. **Enjoy** → Optional relaxing background music creates ambiance while browsing
 
 ---
 
@@ -189,6 +209,7 @@ This project demonstrates how to build a full-featured AI application at **zero 
 - **Refined Editorial Design**: Sophisticated teal + amber color palette with glassmorphism effects
 - **Custom Typography**: Outfit display font paired with DM Sans body text
 - **Dark Mode**: Full support with smooth transitions
+- **Ambient Background Music**: Optional autoplay with elegant hover-to-reveal volume controls
 - **Responsive Layout**: Mobile-first design that scales beautifully
 - **Interactive Elements**: Hover lift effects, subtle animations, and micro-interactions
 - **Accessibility**: ARIA labels, keyboard navigation, semantic HTML
@@ -219,6 +240,12 @@ This project demonstrates how to build a full-featured AI application at **zero 
 4. **Add environment variables in Vercel Dashboard**
    - Go to Project Settings → Environment Variables
    - Add `OPENROUTER_API_KEY`
+
+5. **Background music deploys automatically**
+   - The MP3 file in `/public/music/` is included automatically
+   - Served from Vercel's global CDN
+   - No additional configuration needed
+   - File size: 11MB (well within 50MB limit)
 
 ### Other Deployment Options
 
@@ -270,7 +297,9 @@ Contributions are welcome! This project is designed to showcase:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2026 Pasquale Salomone
 
 ---
 
@@ -286,6 +315,7 @@ VenueVibe is built with 100% free and open-source technologies:
 - **[Next.js](https://nextjs.org/)** - React framework (MIT)
 - **[Tailwind CSS](https://tailwindcss.com/)** - CSS framework (MIT)
 - **[TypeScript](https://www.typescriptlang.org/)** - Type safety (Apache-2.0)
+- **[lNPLUSMUSIC (Pixabay)](https://pixabay.com/users/lnplusmusic-47631836/)** - Background music by Andrii (Pixabay License)
 
 Click the "Credits" button in the app for full attribution details.
 

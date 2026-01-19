@@ -31,6 +31,13 @@ export default function CreditsModal() {
       usage: 'Venue descriptions and enrichment data',
     },
     {
+      name: 'Background Music by lNPLUSMUSIC',
+      url: 'https://pixabay.com/users/lnplusmusic-47631836/',
+      description: 'Relaxing ambient background music by Andrii (INPLUSMUSIC)',
+      license: 'Pixabay License (Free)',
+      usage: 'Optional ambient background music for enhanced user experience',
+    },
+    {
       name: 'OpenRouter',
       url: 'https://openrouter.ai/',
       description: 'Unified AI model API gateway',
@@ -72,7 +79,7 @@ export default function CreditsModal() {
       {/* Credits Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 glass rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 border border-[var(--card-border)]"
+        className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-4 py-2.5 glass rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 border border-[var(--card-border)]"
         aria-label="View credits and attributions"
       >
         <svg className="w-4 h-4 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
