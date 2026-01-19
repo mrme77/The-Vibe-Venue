@@ -1,0 +1,30 @@
+# Music Attribution Template
+#
+# If you want to add attribution for your background music in the CreditsModal,
+# copy the information here after downloading your track from Pixabay.
+#
+# This is OPTIONAL - Pixabay does not require attribution, but it's appreciated!
+
+# Example format:
+# --------------------
+# Track: "Lofi Study"
+# Artist: FASSounds
+# Source: Pixabay
+# License: Pixabay Content License (Free for commercial use)
+# URL: https://pixabay.com/music/
+
+# To add to CreditsModal.tsx:
+# Add this object to the credits array:
+#
+# {
+#   name: 'Background Music: [Track Name]',
+#   url: '[Pixabay track URL]',
+#   description: 'Relaxing background music by [Artist Name]',
+#   license: 'Pixabay License (Free)',
+#   usage: 'Ambient background audio for enhanced user experience',
+# }
+
+# Your track information:
+# Track:
+# Artist:
+# URL:
