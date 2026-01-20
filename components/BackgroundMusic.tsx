@@ -11,11 +11,21 @@ export default function BackgroundMusic() {
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Auto-dismiss autoplay blocked notification after 5 seconds
+  useEffect(() => {
+    if (autoplayBlocked) {
+      const timer = setTimeout(() => {
+        setAutoplayBlocked(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [autoplayBlocked]);
+
   // Initialize with consistent defaults (same on server and client)
   // Volume starts at 20% (0.2) to be subtle and not overwhelming
   const [volume, setVolume] = useState(0.2);
-  // isPlaying starts false for hydration, then restored from localStorage
-  const [isPlaying, setIsPlaying] = useState(false);
+  // isPlaying starts TRUE for immediate autoplay
+  const [isPlaying, setIsPlaying] = useState(true);
 
   // Hydrate from localStorage after mount (client-side only)
   useEffect(() => {
@@ -32,12 +42,21 @@ export default function BackgroundMusic() {
     const savedPlayState = localStorage.getItem('musicPlaying');
     const shouldAutoplay = savedPlayState !== 'false'; // null → true (autoplay), 'false' → false (paused), 'true' → true (playing)
     setIsPlaying(shouldAutoplay);
+
+    // Immediately attempt to play on mount
+    if (shouldAutoplay && audioRef.current) {
+      audioRef.current.play().catch(() => {
+        // Silently handle autoplay restrictions
+        setAutoplayBlocked(true);
+        setIsPlaying(false);
+      });
+    }
   }, []);
 
   // Handle play/pause whenever isPlaying changes (including initial autoplay)
   useEffect(() => {
     const attemptPlayback = async () => {
-      if (!audioRef.current) return;
+      if (!audioRef.current || !mounted) return;
 
       if (isPlaying) {
         try {
@@ -45,7 +64,7 @@ export default function BackgroundMusic() {
           setAutoplayBlocked(false);
           localStorage.setItem('musicPlaying', 'true');
         } catch (err) {
-          // Autoplay blocked by browser - expected behavior, show UI notification
+          // Autoplay blocked by browser - silently handle
           setAutoplayBlocked(true);
           setIsPlaying(false);
         }
@@ -54,10 +73,9 @@ export default function BackgroundMusic() {
       }
     };
 
-    // Reduced delay for faster autoplay start (100ms instead of 500ms)
-    const timer = setTimeout(attemptPlayback, 100);
-    return () => clearTimeout(timer);
-  }, [isPlaying]);
+    // Immediate playback attempt without delay
+    attemptPlayback();
+  }, [isPlaying, mounted]);
 
   // Update audio element when volume changes
   useEffect(() => {
@@ -68,6 +86,24 @@ export default function BackgroundMusic() {
       }
     }
   }, [volume]);
+
+  // Aggressive autoplay: Try to play as soon as audio is loaded
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleCanPlay = () => {
+      if (isPlaying) {
+        audio.play().catch(() => {
+          setAutoplayBlocked(true);
+          setIsPlaying(false);
+        });
+      }
+    };
+
+    audio.addEventListener('canplay', handleCanPlay);
+    return () => audio.removeEventListener('canplay', handleCanPlay);
+  }, [isPlaying]);
 
   const togglePlay = async () => {
     if (audioRef.current) {
@@ -81,12 +117,13 @@ export default function BackgroundMusic() {
         try {
           await audioRef.current.play();
           setIsPlaying(true);
-          setAutoplayBlocked(false);
+          setAutoplayBlocked(false); // Dismiss notification on successful play
           if (typeof window !== 'undefined') {
             localStorage.setItem('musicPlaying', 'true');
           }
         } catch (err) {
           console.error('Error playing audio:', err);
+          setAutoplayBlocked(true);
         }
       }
     }
@@ -104,16 +141,20 @@ export default function BackgroundMusic() {
         ref={audioRef}
         loop
         preload="auto"
+        autoPlay
         src="/music/background-music.mp3"
       />
 
-      {/* Autoplay Blocked Notification */}
+      {/* Autoplay Blocked Notification - Auto-dismisses after 5 seconds */}
       {autoplayBlocked && (
-        <div className="absolute top-full right-0 mt-2 glass rounded-xl p-3 shadow-xl border border-[var(--card-border)] animate-fade-in w-64">
-          <p className="text-xs text-stone-600 dark:text-stone-400">
+        <button
+          onClick={togglePlay}
+          className="absolute top-full right-0 mt-2 glass rounded-xl p-3 shadow-xl border border-[var(--card-border)] animate-fade-in w-64 hover:shadow-2xl hover:scale-105 transition-all duration-200 cursor-pointer"
+        >
+          <p className="text-xs text-stone-600 dark:text-stone-400 text-left">
             🎵 Click to start background music
           </p>
-        </div>
+        </button>
       )}
 
       {/* Volume Slider - appears on hover */}
