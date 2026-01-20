@@ -160,7 +160,7 @@ export default function PlanningForm({ onSubmit, loading = false }: PlanningForm
 
       {/* Budget Selection */}
       <div>
-        <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-3">
+        <label className="block text-base font-bold text-stone-700 dark:text-stone-300 mb-3">
           Budget
         </label>
         <div className="grid grid-cols-4 gap-2 p-1.5 rounded-xl bg-stone-100 dark:bg-stone-800">
@@ -183,10 +183,10 @@ export default function PlanningForm({ onSubmit, loading = false }: PlanningForm
                   }
                   disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                <span className={`block text-lg font-bold ${isSelected ? 'text-teal-600 dark:text-teal-400' : 'text-stone-500 dark:text-stone-400'}`}>
+                <span className={`block text-xl font-bold ${isSelected ? 'text-teal-600 dark:text-teal-400' : 'text-stone-500 dark:text-stone-400'}`}>
                   {labels[level]}
                 </span>
-                <span className={`block text-xs mt-0.5 ${isSelected ? 'text-stone-600 dark:text-stone-300' : 'text-stone-400 dark:text-stone-500'}`}>
+                <span className={`block text-sm mt-0.5 font-medium ${isSelected ? 'text-stone-600 dark:text-stone-300' : 'text-stone-400 dark:text-stone-500'}`}>
                   {descriptions[level]}
                 </span>
                 {isSelected && (
@@ -249,10 +249,10 @@ export default function PlanningForm({ onSubmit, loading = false }: PlanningForm
           type="button"
           onClick={() => setShowOptionalFields(!showOptionalFields)}
           disabled={loading}
-          className="flex items-center gap-2 text-sm font-medium text-stone-600 dark:text-stone-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 text-base font-semibold text-stone-600 dark:text-stone-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors disabled:opacity-50"
         >
           <svg
-            className={`w-4 h-4 transition-transform duration-200 ${showOptionalFields ? 'rotate-90' : ''}`}
+            className={`w-5 h-5 transition-transform duration-200 ${showOptionalFields ? 'rotate-90' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
