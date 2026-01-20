@@ -14,6 +14,7 @@ import { callOpenRouterJSON } from '@/lib/openrouter';
 import { searchVenuesOverpass } from '@/lib/overpass';
 import { getWikiDataDetails } from '@/lib/wikidata';
 import { getOpenTripMapDetails } from '@/lib/opentripmap';
+import { rateLimiter, calculateRetryAfter } from '@/lib/rate-limiter';
 
 interface SearchVenuesRequest {
   occasion: string;
@@ -23,6 +24,25 @@ interface SearchVenuesRequest {
   };
   radius: number;
   preferences: Partial<UserPreferences>;
+}
+
+/**
+ * Extract client IP from Next.js API request
+ */
+function getClientIP(req: NextApiRequest): string {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const realIp = req.headers['x-real-ip'];
+
+  if (forwardedFor) {
+    const ip = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor.split(',')[0];
+    return ip.trim();
+  }
+
+  if (realIp) {
+    return Array.isArray(realIp) ? realIp[0] : realIp;
+  }
+
+  return 'unknown';
 }
 
 /**
@@ -74,9 +94,32 @@ Format: ["venue_type_1", "venue_type_2", "venue_type_3"]`;
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<VenueSearchResponse | { error: string }>
+  res: NextApiResponse<VenueSearchResponse | { error: string; code?: string; retryAfter?: number }>
 ) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Route-specific rate limiting: 5 requests per minute per IP
+  const ip = getClientIP(req);
+  const rateLimitResult = rateLimiter.check(`search-venues:${ip}`, 5, 60000);
+
+  if (!rateLimitResult.allowed) {
+    const retryAfter = calculateRetryAfter(rateLimitResult);
+    res.setHeader('Retry-After', retryAfter.toString());
+    res.setHeader('X-RateLimit-Limit', '5');
+    res.setHeader('X-RateLimit-Remaining', '0');
+    res.setHeader('X-RateLimit-Reset', new Date(rateLimitResult.resetTime).toISOString());
+
+    return res.status(429).json({
+      error: 'Too many venue search requests. Please try again later.',
+      code: 'RATE_LIMIT_EXCEEDED',
+      retryAfter,
+    });
+  }
+
+  // Add rate limit headers to successful response
+  res.setHeader('X-RateLimit-Limit', '5');
+  res.setHeader('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
+  res.setHeader('X-RateLimit-Reset', new Date(rateLimitResult.resetTime).toISOString());
 
   try {
     const { occasion, location, radius, preferences } = req.body as SearchVenuesRequest;

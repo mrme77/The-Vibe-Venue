@@ -6,6 +6,8 @@
  */
 
 import { Venue } from '@/types/venue';
+import { retryWithBackoff } from './retry';
+import { overpassCache, CACHE_TTL } from './cache';
 
 // Define the OSM element interface
 interface OSMElement {
@@ -76,10 +78,17 @@ export async function searchVenuesOverpass(
   lng: number,
   radius: number = 2000
 ): Promise<(Partial<Venue> & { wikidata?: string })[]> {
+  // Check cache first
+  const cacheKey = `overpass:${query}:${lat.toFixed(4)}:${lng.toFixed(4)}:${radius}`;
+  const cachedResult = overpassCache.get(cacheKey);
+  if (cachedResult) {
+    return cachedResult;
+  }
+
   // Construct Overpass QL
   // We use [out:json]; to get JSON response
   // We search for nodes, ways, and relations
-  
+
   const tagFilter = mapQueryToOSMTags(query);
   
   // Custom filter for specific cuisines if mentioned
@@ -119,30 +128,44 @@ export async function searchVenuesOverpass(
   // Try each server with retry logic
   for (const url of servers) {
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        body: `data=${encodeURIComponent(ql)}`,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+      // Wrap each server attempt with retry logic before trying next server
+      const data = await retryWithBackoff(
+        async () => {
+          const response = await fetch(url, {
+            method: 'POST',
+            body: `data=${encodeURIComponent(ql)}`,
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          });
+
+          if (!response.ok) {
+            const error: any = new Error(`Overpass API error: ${response.status}`);
+            error.response = { status: response.status };
+            throw error;
+          }
+
+          const data: OverpassResponse = await response.json();
+          return data;
         },
-      });
-
-      if (!response.ok) {
-        // If timeout, try next server
-        if (response.status === 504 || response.status === 503) {
-          console.warn(`Overpass server ${url} timed out, trying next...`);
-          continue;
+        {
+          maxAttempts: 3,
+          initialDelay: 1000,
+          retryableStatusCodes: [429, 500, 502, 503, 504],
         }
-        throw new Error(`Overpass API error: ${response.status}`);
-      }
-
-      const data: OverpassResponse = await response.json();
+      );
 
       // If we get here, query succeeded
-      return parseOverpassResponse(data);
+      const venues = parseOverpassResponse(data);
+
+      // Cache the results for 6 hours
+      overpassCache.set(cacheKey, venues, CACHE_TTL.OVERPASS);
+
+      return venues;
     } catch (error) {
-      console.warn(`Overpass server ${url} failed:`, error);
+      console.warn(`Overpass server ${url} failed after retries:`, error);
       lastError = error as Error;
+      // Try next server
       continue;
     }
   }

@@ -4,6 +4,8 @@
  * API Documentation: https://openrouter.ai/docs
  */
 
+import { retryWithBackoff } from './retry';
+
 /**
  * OpenRouter API request message format
  * For text-only: content is a string
@@ -82,25 +84,38 @@ export async function callOpenRouter(
   };
 
   try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
-        'X-Title': 'VenueVibe',
+    // Wrap API call with retry logic for resilience
+    const data = await retryWithBackoff(
+      async () => {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+            'X-Title': 'VenueVibe',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          const error: any = new Error(
+            `OpenRouter API error (${response.status}): ${errorText}`
+          );
+          error.response = { status: response.status };
+          throw error;
+        }
+
+        const data: OpenRouterResponse = await response.json();
+        return data;
       },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `OpenRouter API error (${response.status}): ${errorText}`
-      );
-    }
-
-    const data: OpenRouterResponse = await response.json();
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        retryableStatusCodes: [429, 500, 502, 503, 504],
+      }
+    );
 
     // Extract the AI's response text
     const aiResponse = data.choices[0]?.message?.content;

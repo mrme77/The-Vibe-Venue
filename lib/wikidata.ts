@@ -3,6 +3,8 @@
  * Used to fetch venue descriptions and images using WikiData IDs found in OSM.
  */
 
+import { retryWithBackoff } from './retry';
+
 interface WikiDataEntity {
   id: string;
   labels?: { [lang: string]: { value: string } };
@@ -59,10 +61,27 @@ export async function getWikiDataDetails(ids: string[]): Promise<Record<string, 
   const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${idsParam}&format=json&props=labels|descriptions|claims&languages=en&origin=*`;
 
   try {
-    const response = await fetch(url);
-    if (!response.ok) return {};
+    // Wrap API call with retry logic for resilience
+    const data = await retryWithBackoff(
+      async () => {
+        const response = await fetch(url);
 
-    const data: WikiDataResponse = await response.json();
+        if (!response.ok) {
+          const error: any = new Error(`WikiData API error: ${response.status}`);
+          error.response = { status: response.status };
+          throw error;
+        }
+
+        const data: WikiDataResponse = await response.json();
+        return data;
+      },
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        retryableStatusCodes: [429, 500, 502, 503, 504],
+      }
+    );
+
     const results: Record<string, { description?: string; imageUrl?: string }> = {};
 
     for (const id of uniqueIds) {
@@ -70,11 +89,11 @@ export async function getWikiDataDetails(ids: string[]): Promise<Record<string, 
       if (!entity) continue;
 
       const description = entity.descriptions?.en?.value;
-      
+
       // Get image filename from P18 claim
       const imageClaim = entity.claims?.P18?.[0];
       let imageUrl: string | undefined;
-      
+
       if (imageClaim && imageClaim.mainsnak.datavalue) {
         const filename = imageClaim.mainsnak.datavalue.value;
         imageUrl = resolveWikimediaUrl(filename);

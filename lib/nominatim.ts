@@ -6,6 +6,8 @@
  */
 
 import axios from 'axios';
+import { retryWithBackoff } from './retry';
+import { geocodeCache, CACHE_TTL } from './cache';
 
 /**
  * Nominatim API response format
@@ -75,6 +77,13 @@ export async function geocodeLocation(
     throw new Error('Location string cannot be empty');
   }
 
+  // Check cache first
+  const cacheKey = `geocode:${locationString.toLowerCase().trim()}`;
+  const cachedResult = geocodeCache.get(cacheKey);
+  if (cachedResult) {
+    return cachedResult;
+  }
+
   // Enforce 1 request per second rate limit (Nominatim requirement)
   await enforceRateLimit();
 
@@ -82,12 +91,22 @@ export async function geocodeLocation(
   const url = `https://nominatim.openstreetmap.org/search?q=${encodedLocation}&format=json&limit=1`;
 
   try {
-    const response = await axios.get<NominatimResponse[]>(url, {
-      headers: {
-        'User-Agent': 'VenueVibe/1.0 (https://venuevibe.app)',
-        'Accept': 'application/json',
+    // Wrap API call with retry logic for resilience
+    const response = await retryWithBackoff(
+      async () => {
+        return await axios.get<NominatimResponse[]>(url, {
+          headers: {
+            'User-Agent': 'VenueVibe/1.0 (https://venuevibe.app)',
+            'Accept': 'application/json',
+          },
+        });
       },
-    });
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        retryableStatusCodes: [429, 500, 502, 503, 504],
+      }
+    );
 
     const data = response.data;
 
@@ -99,11 +118,16 @@ export async function geocodeLocation(
 
     const result = data[0];
 
-    return {
+    const geocodedLocation: GeocodedLocation = {
       lat: parseFloat(result.lat),
       lng: parseFloat(result.lon),
       displayName: result.display_name,
     };
+
+    // Cache the result for 24 hours
+    geocodeCache.set(cacheKey, geocodedLocation, CACHE_TTL.GEOCODE);
+
+    return geocodedLocation;
   } catch (error) {
     if (error instanceof Error) {
       // Re-throw our custom errors
@@ -148,12 +172,22 @@ export async function reverseGeocode(
   const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
 
   try {
-    const response = await axios.get<NominatimResponse>(url, {
-      headers: {
-        'User-Agent': 'VenueVibe/1.0 (https://venuevibe.app)',
-        'Accept': 'application/json',
+    // Wrap API call with retry logic for resilience
+    const response = await retryWithBackoff(
+      async () => {
+        return await axios.get<NominatimResponse>(url, {
+          headers: {
+            'User-Agent': 'VenueVibe/1.0 (https://venuevibe.app)',
+            'Accept': 'application/json',
+          },
+        });
       },
-    });
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        retryableStatusCodes: [429, 500, 502, 503, 504],
+      }
+    );
 
     const data = response.data;
 

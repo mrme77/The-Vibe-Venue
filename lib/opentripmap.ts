@@ -5,6 +5,8 @@
  * Optional: App works fine without it, just won't have OpenTripMap venue enrichment.
  */
 
+import { retryWithBackoff } from './retry';
+
 const OTM_API_KEY = process.env.OPENTRIPMAP_API_KEY;
 
 interface OTMResponse {
@@ -38,21 +40,54 @@ export async function getOpenTripMapDetails(
   const searchUrl = `https://api.opentripmap.com/0.1/en/places/radius?radius=200&lon=${lng}&lat=${lat}&name=${encodeURIComponent(name)}&apikey=${OTM_API_KEY}&limit=1`;
 
   try {
-    const searchRes = await fetch(searchUrl);
-    if (!searchRes.ok) return null;
-    
-    const features = await searchRes.json();
+    // Wrap search API call with retry logic
+    const features = await retryWithBackoff(
+      async () => {
+        const searchRes = await fetch(searchUrl);
+
+        if (!searchRes.ok) {
+          const error: any = new Error(`OpenTripMap search error: ${searchRes.status}`);
+          error.response = { status: searchRes.status };
+          throw error;
+        }
+
+        const features = await searchRes.json();
+        return features;
+      },
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        retryableStatusCodes: [429, 500, 502, 503, 504],
+      }
+    );
+
     if (!features.features || features.features.length === 0) return null;
-    
+
     const xid = features.features[0].properties.xid;
-    
-    // Now get details
+
+    // Now get details with retry logic
     const detailsUrl = `https://api.opentripmap.com/0.1/en/places/xid/${xid}?apikey=${OTM_API_KEY}`;
-    const detailsRes = await fetch(detailsUrl);
-    if (!detailsRes.ok) return null;
-    
-    const details: OTMResponse = await detailsRes.json();
-    
+
+    const details = await retryWithBackoff(
+      async () => {
+        const detailsRes = await fetch(detailsUrl);
+
+        if (!detailsRes.ok) {
+          const error: any = new Error(`OpenTripMap details error: ${detailsRes.status}`);
+          error.response = { status: detailsRes.status };
+          throw error;
+        }
+
+        const details: OTMResponse = await detailsRes.json();
+        return details;
+      },
+      {
+        maxAttempts: 3,
+        initialDelay: 1000,
+        retryableStatusCodes: [429, 500, 502, 503, 504],
+      }
+    );
+
     return {
       rate: details.rate || 0,
       image: details.preview?.source,
