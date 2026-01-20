@@ -51,6 +51,19 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-dm-sans), system-ui, sans-serif;
   --font-display: var(--font-outfit), system-ui, sans-serif;
+
+  --animate-soft-pulse: soft-pulse 2s ease-in-out infinite;
+
+  @keyframes soft-pulse {
+    0%, 100% {
+      scale: 1;
+      opacity: 1;
+    }
+    50% {
+      scale: 1.1;
+      opacity: 0.9;
+    }
+  }
 }
 
 /* ==========================================================================

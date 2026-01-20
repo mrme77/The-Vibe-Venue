@@ -79,10 +79,10 @@ export default function CreditsModal() {
       {/* Credits Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-4 py-2.5 glass rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 border border-[var(--card-border)]"
+        className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-4 py-2.5 glass rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 border border-[var(--card-border)] animate-soft-pulse"
         aria-label="View credits and attributions"
       >
-        <svg className="w-4 h-4 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-8 h-8 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <span className="text-sm font-medium text-stone-700 dark:text-stone-300">Credits</span>
