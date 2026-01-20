@@ -53,7 +53,5 @@ next-env.d.ts
 !README.md
 !public/music/README.md
 
-# music files (users add their own)
-/public/music/*.mp3
-/public/music/*.wav
-/public/music/*.ogg
+# Music files - included in repo for production deployment
+# Note: 11MB MP3 file is within Vercel's limits (50MB per file)
