@@ -11,6 +11,12 @@ VenueVibe is a privacy-first web application that generates personalized venue r
 
 ---
 
+## 📸 Screenshot
+
+![VenueVibe Application](public/pageview.png)
+
+---
+
 ## ✨ Features
 
 - **AI-Powered Recommendations**: Gemini AI analyzes your preferences and generates personalized venue suggestions
