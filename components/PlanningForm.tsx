@@ -249,17 +249,36 @@ export default function PlanningForm({ onSubmit, loading = false }: PlanningForm
           type="button"
           onClick={() => setShowOptionalFields(!showOptionalFields)}
           disabled={loading}
-          className="flex items-center gap-2 text-base font-semibold text-stone-600 dark:text-stone-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors disabled:opacity-50"
+          className={`group relative inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-base font-semibold transition-all duration-300 disabled:opacity-50
+            ${showOptionalFields
+              ? 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300'
+              : 'bg-gradient-to-r from-teal-50 to-amber-50 dark:from-teal-950/30 dark:to-amber-950/30 text-teal-700 dark:text-teal-300 shadow-md shadow-teal-500/10 hover:shadow-lg hover:shadow-teal-500/20 hover:scale-[1.02]'
+            }`}
         >
+          {/* Subtle pulse glow when closed */}
+          {!showOptionalFields && (
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-teal-400/20 to-amber-400/20 animate-pulse" />
+          )}
+
           <svg
-            className={`w-5 h-5 transition-transform duration-200 ${showOptionalFields ? 'rotate-90' : ''}`}
+            className={`relative z-10 w-5 h-5 transition-transform duration-300 ${showOptionalFields ? 'rotate-90 text-stone-500' : 'text-teal-600 dark:text-teal-400'}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-          {showOptionalFields ? 'Less options' : 'More options'}
+
+          <span className="relative z-10">
+            {showOptionalFields ? 'Less options' : 'More options'}
+          </span>
+
+          {/* Badge indicator when closed */}
+          {!showOptionalFields && (
+            <span className="relative z-10 ml-1 px-2 py-0.5 text-xs font-bold bg-amber-500 text-white rounded-full">
+              Customize
+            </span>
+          )}
         </button>
 
         {showOptionalFields && (
