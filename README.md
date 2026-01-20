@@ -36,8 +36,8 @@ VenueVibe is a privacy-first web application that generates personalized venue r
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/venuevibe.git
-   cd venuevibe
+   git clone https://github.com/mrme77/The-Vibe-Venue.git
+   cd The-Vibe-Venue
    ```
 
 2. **Install dependencies**
