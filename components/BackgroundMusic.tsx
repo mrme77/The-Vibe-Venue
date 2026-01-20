@@ -10,22 +10,22 @@ export default function BackgroundMusic() {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
-  // Initialize from localStorage before render (client-side only)
-  const [volume, setVolume] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedVolume = localStorage.getItem('musicVolume');
-      return savedVolume ? parseFloat(savedVolume) : 0.2;
-    }
-    return 0.2;
-  });
+  // Initialize with consistent defaults (same on server and client)
+  const [volume, setVolume] = useState(0.2);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const [isPlaying, setIsPlaying] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const savedPlayState = localStorage.getItem('musicPlaying');
-      return savedPlayState !== 'false'; // Default to true unless explicitly set to false
+  // Hydrate from localStorage after mount (client-side only)
+  useEffect(() => {
+    // Restore volume from localStorage
+    const savedVolume = localStorage.getItem('musicVolume');
+    if (savedVolume) {
+      setVolume(parseFloat(savedVolume));
     }
-    return true; // Default to true for autoplay
-  });
+
+    // Restore play state from localStorage
+    const savedPlayState = localStorage.getItem('musicPlaying');
+    setIsPlaying(savedPlayState !== 'false'); // Default to true unless explicitly set to false
+  }, []);
 
   // Autoplay on mount
   useEffect(() => {
