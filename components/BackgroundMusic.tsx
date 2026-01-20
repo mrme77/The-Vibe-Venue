@@ -11,20 +11,23 @@ export default function BackgroundMusic() {
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
   // Initialize with consistent defaults (same on server and client)
+  // Volume starts at 20% (0.2) to be subtle and not overwhelming
   const [volume, setVolume] = useState(0.2);
+  // isPlaying starts false for hydration, then restored from localStorage
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Hydrate from localStorage after mount (client-side only)
   useEffect(() => {
-    // Restore volume from localStorage
+    // Restore volume from localStorage (defaults to 20% if not saved)
     const savedVolume = localStorage.getItem('musicVolume');
     if (savedVolume) {
       setVolume(parseFloat(savedVolume));
     }
 
     // Restore play state from localStorage
+    // AUTOPLAY: Defaults to TRUE (autoplay) unless user has explicitly paused it before
     const savedPlayState = localStorage.getItem('musicPlaying');
-    setIsPlaying(savedPlayState !== 'false'); // Default to true unless explicitly set to false
+    setIsPlaying(savedPlayState !== 'false'); // null → true (autoplay), 'false' → false (paused), 'true' → true (playing)
   }, []);
 
   // Autoplay on mount
