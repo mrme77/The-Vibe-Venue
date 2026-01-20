@@ -9,6 +9,7 @@ export default function BackgroundMusic() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Initialize with consistent defaults (same on server and client)
   // Volume starts at 20% (0.2) to be subtle and not overwhelming
@@ -18,6 +19,8 @@ export default function BackgroundMusic() {
 
   // Hydrate from localStorage after mount (client-side only)
   useEffect(() => {
+    setMounted(true);
+
     // Restore volume from localStorage (defaults to 20% if not saved)
     const savedVolume = localStorage.getItem('musicVolume');
     if (savedVolume) {
@@ -51,8 +54,8 @@ export default function BackgroundMusic() {
       }
     };
 
-    // Small delay to ensure audio element is ready
-    const timer = setTimeout(attemptPlayback, 500);
+    // Reduced delay for faster autoplay start (100ms instead of 500ms)
+    const timer = setTimeout(attemptPlayback, 100);
     return () => clearTimeout(timer);
   }, [isPlaying]);
 
@@ -157,7 +160,7 @@ export default function BackgroundMusic() {
             )}
           </div>
           <span className="text-xs font-medium text-stone-600 dark:text-stone-300 hidden sm:inline">
-            {isPlaying ? 'Playing...' : 'Paused'}
+            {!mounted ? 'Starting...' : isPlaying ? 'Playing...' : 'Paused'}
           </span>
         </div>
 
