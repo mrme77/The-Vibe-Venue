@@ -42,7 +42,7 @@ export default function BackgroundMusic() {
           setAutoplayBlocked(false);
           localStorage.setItem('musicPlaying', 'true');
         } catch (err) {
-          console.log('Autoplay blocked by browser:', err);
+          // Autoplay blocked by browser - expected behavior, show UI notification
           setAutoplayBlocked(true);
           setIsPlaying(false);
         }
