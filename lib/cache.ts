@@ -128,14 +128,10 @@ class LRUCache<T> {
    */
   private startCleanupInterval(): void {
     // Run cleanup every 60 seconds
+    // Note: In serverless environments, cleanup happens automatically when function terminates
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
     }, 60000);
-
-    // Ensure cleanup stops when process exits (for serverless)
-    if (typeof process !== 'undefined') {
-      process.on('beforeExit', () => this.stopCleanupInterval());
-    }
   }
 
   /**
