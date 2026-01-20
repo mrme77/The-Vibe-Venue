@@ -4,9 +4,10 @@
 
 VenueVibe is a privacy-first web application that generates personalized venue recommendations for date nights, team outings, celebrations, and social gatherings. Using AI and free open-source APIs, it provides intelligent suggestions with interactive maps, detailed reasoning, and zero data retention.
 
-![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38bdf8?logo=tailwindcss)
+![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black?logo=next.js)
+![React](https://img.shields.io/badge/React-19-61dafb?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?logo=tailwindcss)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -97,9 +98,9 @@ VenueVibe is a privacy-first web application that generates personalized venue r
 ## 🛠️ Technology Stack
 
 ### Core Framework
-- **Next.js 14** - React framework with SSR and API routes
-- **TypeScript** - Type safety and enhanced developer experience
-- **React 18** - Component-based UI library
+- **Next.js 16.1.1** - React framework with SSR and API routes
+- **TypeScript 5** - Type safety and enhanced developer experience
+- **React 19** - Component-based UI library
 
 ### Styling
 - **Tailwind CSS** - Utility-first CSS framework
