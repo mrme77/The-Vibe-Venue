@@ -27,29 +27,32 @@ export default function BackgroundMusic() {
     // Restore play state from localStorage
     // AUTOPLAY: Defaults to TRUE (autoplay) unless user has explicitly paused it before
     const savedPlayState = localStorage.getItem('musicPlaying');
-    setIsPlaying(savedPlayState !== 'false'); // null → true (autoplay), 'false' → false (paused), 'true' → true (playing)
+    const shouldAutoplay = savedPlayState !== 'false'; // null → true (autoplay), 'false' → false (paused), 'true' → true (playing)
+    setIsPlaying(shouldAutoplay);
   }, []);
 
-  // Autoplay on mount
+  // Handle play/pause whenever isPlaying changes (including initial autoplay)
   useEffect(() => {
-    const attemptAutoplay = async () => {
-      if (audioRef.current && isPlaying) {
+    const attemptPlayback = async () => {
+      if (!audioRef.current) return;
+
+      if (isPlaying) {
         try {
           await audioRef.current.play();
           setAutoplayBlocked(false);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('musicPlaying', 'true');
-          }
+          localStorage.setItem('musicPlaying', 'true');
         } catch (err) {
           console.log('Autoplay blocked by browser:', err);
           setAutoplayBlocked(true);
           setIsPlaying(false);
         }
+      } else {
+        audioRef.current.pause();
       }
     };
 
     // Small delay to ensure audio element is ready
-    const timer = setTimeout(attemptAutoplay, 500);
+    const timer = setTimeout(attemptPlayback, 500);
     return () => clearTimeout(timer);
   }, [isPlaying]);
 
