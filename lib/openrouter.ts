@@ -48,7 +48,7 @@ interface OpenRouterResponse {
  * Calls OpenRouter API with a prompt and returns the AI response
  *
  * @param prompt - The user prompt to send to the AI
- * @param model - The model to use (default: google/gemini-2.5-flash-preview-05-20)
+ * @param model - The model to use (default: google/gemini-2.5-flash-lite-preview-09-2025)
  * @returns The AI's text response
  * @throws Error if API call fails or API key is missing
  *
@@ -62,7 +62,7 @@ interface OpenRouterResponse {
  */
 export async function callOpenRouter(
   prompt: string,
-  model: string = 'google/gemini-2.5-flash-preview-05-20'
+  model: string = 'google/gemini-2.5-flash-lite-preview-09-2025'
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -138,7 +138,7 @@ export async function callOpenRouter(
  * Useful for structured outputs like search queries or recommendations
  *
  * @param prompt - The user prompt requesting JSON output
- * @param model - The model to use (default: google/gemini-2.5-flash-preview-05-20)
+ * @param model - The model to use (default: google/gemini-2.5-flash-lite-preview-09-2025)
  * @returns Parsed JSON object
  * @throws Error if response is not valid JSON
  *
@@ -152,7 +152,7 @@ export async function callOpenRouter(
  */
 export async function callOpenRouterJSON<T>(
   prompt: string,
-  model: string = 'google/gemini-2.5-flash-preview-05-20'
+  model: string = 'google/gemini-2.5-flash-lite-preview-09-2025'
 ): Promise<T> {
   const response = await callOpenRouter(prompt, model);
 
