@@ -1,5 +1,5 @@
 /**
- * Next.js Edge Middleware
+ * Next.js Edge Proxy
  * Runs before all API routes to provide global rate limiting
  */
 
@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { rateLimiter, getClientIP, calculateRetryAfter } from './lib/rate-limiter';
 
 /**
- * Middleware function that runs on Edge before API routes
+ * Proxy function that runs on Edge before API routes
  * Implements global rate limiting: 30 requests per minute per IP
  */
 export function middleware(request: NextRequest) {
@@ -48,7 +48,7 @@ export function middleware(request: NextRequest) {
 }
 
 /**
- * Configure which routes the middleware runs on
+ * Configure which routes the proxy runs on
  * Only runs on API routes (/api/*)
  */
 export const config = {
