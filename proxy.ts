@@ -10,7 +10,7 @@ import { rateLimiter, getClientIP, calculateRetryAfter } from './lib/rate-limite
  * Proxy function that runs on Edge before API routes
  * Implements global rate limiting: 30 requests per minute per IP
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Extract client IP
   const ip = getClientIP(request);
 
